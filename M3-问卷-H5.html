@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>抽卡消费调查 · 计算机导论实践项目</title>
+<style>
+  :root{
+    --ink:#241513; --ink2:#3A2A27; --muted:#7C6A66; --line:#EDE1DC;
+    --bg:#F8F4F2; --paper:#FFFFFF; --pri:#B4100A; --pri-soft:#FBEBE8;
+    --teal:#0E9E7C; --amber:#D99200;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink); font-size:16px; line-height:1.7;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",system-ui,sans-serif;
+    padding:0 0 40px;
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:0 16px}
+
+  /* 头部 */
+  header{background:var(--pri);color:#fff;padding:26px 16px 22px;margin:0 -16px 18px}
+  .hd-inner{max-width:640px;margin:0 auto}
+  .kicker{font-size:12px;letter-spacing:.18em;opacity:.85;margin:0 0 8px}
+  h1{font-size:22px;line-height:1.35;margin:0 0 10px;font-weight:800}
+  .sub{font-size:13.5px;opacity:.9;margin:0}
+  .meta{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;opacity:.9}
+  .meta span{display:inline-flex;align-items:center;gap:5px}
+
+  /* 进度 */
+  .bar{position:sticky;top:0;z-index:9;background:rgba(248,244,242,.95);
+       backdrop-filter:blur(8px);padding:10px 0 8px;margin:0 -16px 6px;
+       border-bottom:1px solid var(--line)}
+  .bar-inner{max-width:640px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:10px}
+  .track{flex:1;height:6px;background:#EADDD8;border-radius:99px;overflow:hidden}
+  .fill{height:100%;width:0;background:var(--pri);border-radius:99px;transition:width .25s ease}
+  .bar-txt{font-size:12.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+  /* 卡片 */
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;
+        padding:16px 15px;margin:0 0 12px;box-shadow:0 1px 2px rgba(36,21,19,.03)}
+  .qno{display:inline-block;font-size:11.5px;font-weight:700;color:var(--pri);
+       background:var(--pri-soft);border-radius:6px;padding:1px 7px;margin-bottom:8px;
+       letter-spacing:.06em}
+  .qt{font-size:15.5px;font-weight:700;color:var(--ink);margin:0 0 4px}
+  .qh{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;min-height:46px;padding:9px 12px;
+       border:1.5px solid var(--line);border-radius:10px;cursor:pointer;
+       font-size:15px;color:var(--ink2);background:#fff;transition:.15s;user-select:none}
+  .opt:active{transform:scale(.99)}
+  .dot{width:19px;height:19px;border-radius:50%;border:1.5px solid #CBB8B3;
+       flex:0 0 19px;position:relative;transition:.15s}
+  .opt.on{border-color:var(--pri);background:var(--pri-soft);color:var(--pri);font-weight:600}
+  .opt.on .dot{border-color:var(--pri);background:var(--pri)}
+  .opt.on .dot::after{content:"";position:absolute;inset:4px;border-radius:50%;background:#fff}
+
+  .field{display:flex;align-items:center;gap:8px;margin-top:4px}
+  input[type=number],input[type=text],textarea{
+    width:100%;font:inherit;color:var(--ink);background:#fff;
+    border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;min-height:46px;
+    outline:none;transition:.15s;-webkit-appearance:none;appearance:none}
+  input:focus,textarea:focus{border-color:var(--pri);background:#FFFCFB}
+  input:disabled{background:#F5EFED;color:var(--muted)}
+  .unit{font-size:14px;color:var(--muted);white-space:nowrap}
+  textarea{min-height:76px;resize:vertical;line-height:1.6}
+
+  .err{color:var(--pri);font-size:13px;margin-top:8px;display:none}
+  .card.bad{border-color:var(--pri);background:#FFFAF9}
+  .card.bad .err{display:block}
+
+  .btn{display:block;width:100%;border:0;border-radius:12px;font:inherit;
+       font-size:16.5px;font-weight:700;padding:15px;cursor:pointer;transition:.15s}
+  .btn:active{transform:scale(.995)}
+  .btn-main{background:var(--pri);color:#fff;box-shadow:0 4px 14px rgba(180,16,10,.22)}
+  .btn-main:disabled{background:#D9C4C0;box-shadow:none;cursor:not-allowed}
+  .btn-ghost{background:#fff;color:var(--ink2);border:1.5px solid var(--line);margin-top:10px}
+
+  .hint{font-size:12.5px;color:var(--muted);text-align:center;margin:14px 0 0;line-height:1.6}
+
+  .tip{background:#FFF6E8;border-left:4px solid #D99200;border-radius:8px;
+       padding:10px 12px;margin-top:14px;font-size:13px;line-height:1.7;color:#6B4E16}
+  .tip b{color:#B4740B;margin-right:4px}
+
+  /* 完成页 */
+  .done{text-align:center;padding:28px 16px}
+  .tick{width:64px;height:64px;border-radius:50%;background:var(--teal);color:#fff;
+        display:flex;align-items:center;justify-content:center;font-size:34px;margin:0 auto 16px}
+  .done h2{font-size:20px;margin:0 0 8px}
+  .done p{font-size:14px;color:var(--muted);margin:0 0 18px;line-height:1.7}
+  .kv{text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;
+      padding:6px 14px;margin:0 0 16px}
+  .kv div{display:flex;justify-content:space-between;gap:14px;padding:9px 0;
+          border-bottom:1px solid #F4EBE8;font-size:14px}
+  .kv div:last-child{border-bottom:0}
+  .kv b{font-weight:600;color:var(--ink2);flex:0 0 auto}
+  .kv span{color:var(--ink);text-align:right;word-break:break-all}
+
+  /* 管理面板 */
+  .admin{border:2px dashed var(--pri);border-radius:12px;padding:14px;background:#fff}
+  .admin h2{font-size:16px;margin:0 0 6px;color:var(--pri)}
+  .admin .n{font-size:13px;color:var(--muted);margin:0 0 12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .row .btn{width:auto;flex:1;min-width:130px;padding:11px;font-size:14.5px}
+  .log{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:10px;
+       margin-top:6px;font-size:12.5px}
+  .log div{padding:8px 10px;border-bottom:1px solid #F6EFEC;line-height:1.6}
+  .log div:last-child{border-bottom:0}
+  .log em{color:var(--muted);font-style:normal;font-size:11.5px}
+
+  footer{text-align:center;font-size:11.5px;color:#A99995;margin-top:22px;line-height:1.9;cursor:default}
+  .hidden{display:none!important}
+  @media (max-width:360px){ h1{font-size:20px} .opt{font-size:14.5px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="hd-inner">
+      <p class="kicker">四川大学 · 计算机导论实践项目</p>
+      <h1>抽卡消费调查</h1>
+      <p class="sub">关于抽卡概率与真实花费：到底值不值</p>
+      <div class="meta">
+        <span>🕒 约 2 分钟</span><span>🔒 完全匿名</span><span>📊 仅用于课程分析</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="bar" id="bar">
+    <div class="bar-inner">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <div class="bar-txt" id="bartxt">0 / 7</div>
+    </div>
+  </div>
+
+  <main id="app"></main>
+
+  <footer id="footer">
+    M3 抽卡概率与真实花费 · 数据仅用于《计算机导论》课程实践项目<br>
+    不收集姓名、账号等任何身份信息 · 请勿提交虚假数据
+  </footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ==================== 配置 ==================== */
+  // 接口地址：留空 = 与页面同源（推荐：用配套的 问卷服务端/server.js 托管本页面）
+  // 若把本页面放到别的域名，这里填完整地址，例如 'https://survey.example.com'
+  var API_BASE = '';
+
+  var TOKEN_KEY = 'm3_admin_token';
+
+  /* ==================== 题库 ==================== */
+  var QUESTIONS = [
+    {
+      id: 'q1', type: 'single', required: true,
+      title: '你目前主要玩的、带抽卡机制的游戏是？',
+      hint: '单选；选你最常玩的那一个，第 2~7 题都按这款游戏回答',
+      options: ['原神', '崩坏·星穹铁道', '绝区零', '崩坏3', '鸣潮',
+                '明日方舟', '明日方舟·终末地', '王者荣耀', '和平精英',
+                '第五人格', '阴阳师', '重返未来：1999',
+                '其他（请在下方填写）', '我不玩带抽卡机制的游戏'],
+      other: true
+    },
+    {
+      id: 'q2', type: 'single', required: true,
+      title: '你是否为抽卡付过费？',
+      hint: '只算游戏内充值用于抽卡/开箱的钱',
+      options: ['是', '否']
+    },
+    {
+      id: 'q3', type: 'number', required: true, unit: '元', min: 0, max: 100000,
+      title: '你平均每月在抽卡上花多少钱？',
+      hint: '填数字；不付费请填 0（不要留空）'
+    },
+    {
+      id: 'q4', type: 'text', required: true, maxlength: 20,
+      title: '你最想抽到的东西是什么？',
+      hint: '如某角色、皮肤或武器；不管最后有没有抽到，都填它的名字'
+    },
+    {
+      id: 'q5', type: 'number', required: true, unit: '次', min: 1, max: 100000,
+      title: '为了抽到它，你一共抽了多少次？',
+      hint: '填大概次数即可，比如 60'
+    },
+    {
+      id: 'q6', type: 'single', required: true,
+      title: '你最终抽到了吗？',
+      hint: '“还在抽”按“没抽到”统计',
+      options: ['抽到了', '没抽到', '还在抽']
+    },
+    {
+      id: 'q7', type: 'single', required: true,
+      title: '这个游戏的官方概率公示，你看过吗？',
+      hint: '在游戏内「概率公示 / 活动规则」里公布的百分比',
+      options: ['看过', '没看过', '不知道有这个东西']
+    }
+  ];
+
+  var answers = {};
+  var otherQ1 = '';
+  var app = document.getElementById('app');
+  var bar = document.getElementById('bar');
+
+  /* ==================== 接口 ==================== */
+  function apiUrl(p) {
+    return (API_BASE || '') + p;
+  }
+
+  function requestJSON(u, opt) {
+    return fetch(u, opt).then(function (r) {
+      return r.text().then(function (t) {
+        var j = {};
+        try { j = t ? JSON.parse(t) : {}; } catch (e) { j = {}; }
+        if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+        return j;
+      });
+    });
+  }
+
+  function postJSON(u, data) {
+    return requestJSON(u, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  }
+
+  function getJSON(u) {
+    return requestJSON(u, { method: 'GET' });
+  }
+
+  /* ==================== 小工具 ==================== */
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function now() {
+    var d = new Date();
+    function p(n) { return n < 10 ? '0' + n : '' + n; }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' +
+           p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function kv(k, v) {
+    return '<div><b>' + esc(k) + '</b><span>' + esc(v) + '</span></div>';
+  }
+
+  function csvCell(v) {
+    var s = (v === null || v === undefined) ? '' : String(v);
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  var CSV_HEAD = ['同学编号', '是否付费', '月均花费(元)', '最想抽到的东西', '抽它的次数',
+                  '官方公示概率(%)', '是否抽到', '游戏', '是否看过公示', '提交时间'];
+
+  function toCSV(rows) {
+    var out = [CSV_HEAD.join(',')];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      out.push([
+        i + 1,
+        r.q2,
+        r.q3,
+        csvCell(r.q4),
+        r.q5,
+        '',
+        (r.q6 === '抽到了' ? '是' : '否'),
+        csvCell(r.q1),
+        r.q7,
+        r.ts
+      ].join(','));
+    }
+    return out.join('\r\n');
+  }
+
+  function copyText(text, cb) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { cb && cb(); },
+        function () { fallbackCopy(text, cb); });
+    } else {
+      fallbackCopy(text, cb);
+    }
+  }
+
+  function fallbackCopy(text, cb) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); if (cb) cb(); } catch (e) { alert('复制失败，请手动选择文本'); }
+    document.body.removeChild(ta);
+  }
+
+  /* ==================== 渲染问卷 ==================== */
+  function renderForm() {
+    var html = '';
+    QUESTIONS.forEach(function (q, i) {
+      html += '<section class="card" id="c_' + q.id + '">';
+      html += '<span class="qno">Q' + (i + 1) + ' / ' + QUESTIONS.length + '</span>';
+      html += '<p class="qt">' + esc(q.title) + '</p>';
+      if (q.hint) html += '<p class="qh">' + esc(q.hint) + '</p>';
+
+      if (q.type === 'single') {
+        html += '<div class="opts">';
+        q.options.forEach(function (opt) {
+          html += '<div class="opt" data-q="' + q.id + '" data-v="' + esc(opt) + '">' +
+                  '<span class="dot"></span><span>' + esc(opt) + '</span></div>';
+        });
+        html += '</div>';
+        if (q.other) {
+          html += '<div class="field" id="other_' + q.id + '" style="margin-top:10px;display:none">' +
+                  '<input type="text" maxlength="20" placeholder="请填写游戏名称" data-other="' + q.id + '">' +
+                  '</div>';
+        }
+      } else if (q.type === 'number') {
+        html += '<div class="field">' +
+                '<input type="number" inputmode="numeric" min="' + (q.min || 0) + '" ' +
+                'placeholder="填写数字" data-num="' + q.id + '">' +
+                '<span class="unit">' + esc(q.unit || '') + '</span></div>';
+      } else {
+        html += '<div class="field"><input type="text" maxlength="' + (q.maxlength || 30) + '" ' +
+                'placeholder="填写内容" data-txt="' + q.id + '"></div>';
+      }
+
+      if (q.id === 'q1') {
+        html += '<div class="tip"><b>📌 注意</b>下面 Q2~Q7 请都按你上面选择的这款游戏回答——花费、抽卡次数、概率公示，指的都是同一款游戏。</div>';
+      }
+      html += '<p class="err" id="e_' + q.id + '">这一题还没填完整</p>';
+      html += '</section>';
+    });
+
+    html += '<button class="btn btn-main" id="submit" disabled>提交问卷</button>';
+    html += '<p class="hint">提交后答案会直接上传到问卷服务器，不需要再转发给任何人<br>整个过程不收集姓名与账号，只记录你填的这 7 项</p>';
+    app.innerHTML = html;
+
+    bindEvents();
+    updateProgress();
+  }
+
+  function bindEvents() {
+    app.querySelectorAll('.opt').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var qid = el.getAttribute('data-q');
+        var val = el.getAttribute('data-v');
+        app.querySelectorAll('.opt[data-q="' + qid + '"]').forEach(function (o) {
+          o.classList.remove('on');
+        });
+        el.classList.add('on');
+        answers[qid] = val;
+
+        if (qid === 'q1') {
+          var box = document.getElementById('other_q1');
+          if (box) box.style.display = (val === '其他（请在下方填写）') ? 'flex' : 'none';
+        }
+        if (qid === 'q2') {
+          var c3 = document.getElementById('c_q3');
+          var inp = c3 ? c3.querySelector('[data-num="q3"]') : null;
+          if (inp) {
+            if (val === '否') {
+              inp.value = '0';
+              inp.disabled = true;
+              answers.q3 = '0';
+            } else {
+              inp.disabled = false;
+              if (inp.value === '0') inp.value = '';
+              answers.q3 = inp.value === '' ? undefined : inp.value;
+            }
+          }
+        }
+        clearErr(qid);
+        updateProgress();
+      });
+    });
+
+    app.querySelectorAll('[data-num]').forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        answers[inp.getAttribute('data-num')] = inp.value.trim();
+        clearErr(inp.getAttribute('data-num'));
+        updateProgress();
+      });
+    });
+    app.querySelectorAll('[data-txt]').forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        answers[inp.getAttribute('data-txt')] = inp.value.trim();
+        clearErr(inp.getAttribute('data-txt'));
+        updateProgress();
+      });
+    });
+    app.querySelectorAll('[data-other]').forEach(function (inp) {
+      inp.addEventListener('input', function () {
+        otherQ1 = inp.value.trim();
+        updateProgress();
+      });
+    });
+
+    document.getElementById('submit').addEventListener('click', onSubmit);
+  }
+
+  function clearErr(qid) {
+    var card = document.getElementById('c_' + qid);
+    if (card) card.classList.remove('bad');
+  }
+
+  function filled(q) {
+    if (q.id === 'q1' && answers.q1 === '其他（请在下方填写）') return !!otherQ1;
+    var v = answers[q.id];
+    return v !== undefined && v !== null && String(v).trim() !== '';
+  }
+
+  function updateProgress() {
+    var n = 0;
+    QUESTIONS.forEach(function (q) { if (filled(q)) n++; });
+    var fill = document.getElementById('fill');
+    var txt = document.getElementById('bartxt');
+    if (fill) fill.style.width = Math.round(n / QUESTIONS.length * 100) + '%';
+    if (txt) txt.textContent = n + ' / ' + QUESTIONS.length;
+    var btn = document.getElementById('submit');
+    if (btn) btn.disabled = (n !== QUESTIONS.length);
+  }
+
+  /* ==================== 提交 ==================== */
+  function onSubmit() {
+    if (answers.q1 === '我不玩带抽卡机制的游戏') {
+      renderSkip();
+      return;
+    }
+
+    var firstBad = null;
+    QUESTIONS.forEach(function (q) {
+      if (!q.required) return;
+      if (!filled(q)) {
+        var card = document.getElementById('c_' + q.id);
+        if (card) {
+          card.classList.add('bad');
+          if (!firstBad) firstBad = card;
+        }
+      }
+    });
+    if (firstBad) {
+      firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    var num3 = Number(answers.q3);
+    var num5 = Number(answers.q5);
+    if (!isFinite(num3) || num3 < 0) { markBad('q3'); return; }
+    if (!isFinite(num5) || num5 < 1) { markBad('q5'); return; }
+
+    var rec = {
+      q1: answers.q1 === '其他（请在下方填写）' ? ('其他：' + otherQ1) : answers.q1,
+      q2: answers.q2,
+      q3: num3,
+      q4: answers.q4,
+      q5: num5,
+      q6: answers.q6,
+      q7: answers.q7,
+      ts: now()
+    };
+
+    var btn = document.getElementById('submit');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '正在上传…';
+    }
+
+    postJSON(apiUrl('/api/submit'), rec).then(function (res) {
+      renderDone(rec, res.no || 0);
+    }).catch(function (err) {
+      renderFail(rec, err.message || '网络异常');
+    });
+  }
+
+  function markBad(qid) {
+    var card = document.getElementById('c_' + qid);
+    if (card) {
+      card.classList.add('bad');
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function renderSkip() {
+    bar.classList.add('hidden');
+    app.innerHTML =
+      '<section class="card done">' +
+      '<div class="tick" style="background:#87A1A1">👋</div>' +
+      '<h2>谢谢你</h2>' +
+      '<p>本次调查的对象是<b>玩带抽卡机制游戏</b>的同学，你选择了“不玩”，' +
+      '所以不需要填写，也不会上传任何数据。</p>' +
+      '</section>' +
+      '<button class="btn btn-ghost" id="back">← 返回修改</button>';
+    document.getElementById('back').addEventListener('click', function () {
+      answers = {}; otherQ1 = '';
+      renderForm();
+      window.scrollTo(0, 0);
+    });
+  }
+
+  function renderDone(rec, no) {
+    bar.classList.add('hidden');
+    var rowsHtml =
+      kv('游戏', rec.q1) + kv('是否付费', rec.q2) + kv('月均花费', rec.q3 + ' 元') +
+      kv('最想抽到的东西', rec.q4) + kv('抽它的次数', rec.q5 + ' 次') +
+      kv('是否抽到', rec.q6) + kv('看过概率公示', rec.q7);
+
+    app.innerHTML =
+      '<section class="card done">' +
+        '<div class="tick">✓</div>' +
+        '<h2>提交成功</h2>' +
+        '<p>' + (no ? ('你是第 <b>' + no + '</b> 份有效答卷。') : '') +
+        '答案已经上传，不需要再发给任何人。</p>' +
+      '</section>' +
+      '<div class="kv">' + rowsHtml + '</div>' +
+      '<button class="btn btn-main" id="again">再填一份（换一位同学）</button>' +
+      '<button class="btn btn-ghost" id="admin">组长：打开管理面板</button>' +
+      '<p class="hint">答案只存在于问卷服务器上，本机不保存任何答卷。</p>';
+
+    document.getElementById('again').addEventListener('click', function () {
+      answers = {}; otherQ1 = '';
+      renderForm();
+      window.scrollTo(0, 0);
+    });
+    document.getElementById('admin').addEventListener('click', function () {
+      location.hash = '#admin';
+      renderAdmin();
+    });
+  }
+
+  function renderFail(rec, msg) {
+    var line = toCSV([rec]).split('\r\n')[1];
+    app.innerHTML =
+      '<section class="card done">' +
+        '<div class="tick" style="background:#D99200">!</div>' +
+        '<h2>没能上传成功</h2>' +
+        '<p>' + esc(msg) + '<br>请检查网络后重试；如果一直失败，点下面的按钮复制答案，发给组长手动补录。</p>' +
+      '</section>' +
+      '<button class="btn btn-main" id="retry">重试提交</button>' +
+      '<button class="btn btn-ghost" id="copyfail">复制我的答案（备用）</button>' +
+      '<button class="btn btn-ghost" id="back2">← 返回修改</button>' +
+      '<p class="hint">如果你是用双击本地文件的方式打开的，接口会不可用——请通过问卷服务器地址访问。</p>';
+
+    document.getElementById('retry').addEventListener('click', onSubmit);
+    document.getElementById('copyfail').addEventListener('click', function () {
+      var b = this;
+      copyText(line, function () {
+        b.textContent = '已复制 ✓ 发给组长吧';
+      });
+    });
+    document.getElementById('back2').addEventListener('click', function () {
+      renderForm();
+      window.scrollTo(0, 0);
+    });
+  }
+
+  /* ==================== 管理面板（读服务端） ==================== */
+  function getToken() {
+    try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
+  }
+  function setToken(t) {
+    try {
+      if (t) sessionStorage.setItem(TOKEN_KEY, t);
+      else sessionStorage.removeItem(TOKEN_KEY);
+    } catch (e) {}
+  }
+
+  function renderAdmin() {
+    bar.classList.add('hidden');
+    var token = getToken();
+    if (!token) { renderTokenPrompt(''); return; }
+
+    app.innerHTML = '<section class="card"><p class="hint">正在读取服务器数据…</p></section>';
+
+    getJSON(apiUrl('/api/responses?token=' + encodeURIComponent(token))).then(function (res) {
+      renderAdminTable(res.rows || [], token);
+    }).catch(function (err) {
+      if (String(err.message).indexOf('口令') >= 0) {
+        setToken('');
+        renderTokenPrompt('口令不对，请重新输入');
+      } else {
+        app.innerHTML =
+          '<section class="card done">' +
+          '<div class="tick" style="background:#D99200">!</div>' +
+          '<h2>读不到数据</h2>' +
+          '<p>' + esc(err.message) + '</p></section>' +
+          '<button class="btn btn-ghost" id="retryadmin">重试</button>' +
+          '<button class="btn btn-ghost" id="back4">← 回到问卷</button>';
+        document.getElementById('retryadmin').addEventListener('click', renderAdmin);
+        document.getElementById('back4').addEventListener('click', backToForm);
+      }
+    });
+  }
+
+  function backToForm() {
+    location.hash = '';
+    renderForm();
+    window.scrollTo(0, 0);
+  }
+
+  function renderTokenPrompt(errText) {
+    app.innerHTML =
+      '<section class="card admin">' +
+        '<h2>管理面板（组长用）</h2>' +
+        '<p class="n">需要输入管理口令才能查看全部答卷。</p>' +
+        (errText ? '<p class="err" style="display:block">' + esc(errText) + '</p>' : '') +
+        '<div class="field"><input type="password" id="tk" placeholder="管理口令（ADMIN_TOKEN）" autocomplete="off"></div>' +
+        '<button class="btn btn-main" id="login" style="margin-top:12px">进入</button>' +
+      '</section>' +
+      '<button class="btn btn-ghost" id="back3">← 回到问卷</button>' +
+      '<p class="hint">口令只存在本标签页，关掉浏览器即失效；答卷本身不在本机保存。</p>';
+
+    document.getElementById('login').addEventListener('click', function () {
+      var v = document.getElementById('tk').value.trim();
+      if (!v) { alert('请输入管理口令'); return; }
+      setToken(v);
+      renderAdmin();
+    });
+    document.getElementById('tk').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') document.getElementById('login').click();
+    });
+    document.getElementById('back3').addEventListener('click', backToForm);
+  }
+
+  function renderAdminTable(rows, token) {
+    var list = '';
+    rows.forEach(function (r, i) {
+      list += '<div>#' + (i + 1) + ' ' + esc(r.q1) + ' · ' + esc(r.q2) +
+              ' · ' + esc(r.q3) + ' 元 · ' + esc(r.q4) + ' · ' + esc(r.q5) + ' 次 · ' +
+              esc(r.q6) + ' <em>' + esc(r.ts) + '</em></div>';
+    });
+    if (!rows.length) list = '<div style="color:#7C6A66">服务器上还没有答卷。</div>';
+
+    app.innerHTML =
+      '<section class="card admin">' +
+        '<h2>管理面板（组长用）</h2>' +
+        '<p class="n">服务器上共 <b>' + rows.length + '</b> 份答卷</p>' +
+        '<div class="row">' +
+          '<button class="btn btn-main" id="dl">导出 CSV</button>' +
+          '<button class="btn btn-ghost" id="refresh">刷新</button>' +
+        '</div>' +
+        '<div class="row">' +
+          '<button class="btn btn-ghost" id="cpcsv">复制 CSV 文本</button>' +
+          '<button class="btn btn-ghost" id="logout">退出口令</button>' +
+        '</div>' +
+        '<div class="log">' + list + '</div>' +
+      '</section>' +
+      '<button class="btn btn-ghost" id="back5">← 回到问卷</button>' +
+      '<p class="hint">CSV 共 10 列：前 7 列正好对应 Excel 模板「原始数据」的 A~G（第 6 列故意留空，交给 VLOOKUP），' +
+      '多出的 3 列落在 H~J，不影响模板计算。</p>';
+
+    document.getElementById('dl').addEventListener('click', function () {
+      window.location.href = apiUrl('/api/export.csv?token=' + encodeURIComponent(token));
+    });
+    document.getElementById('refresh').addEventListener('click', renderAdmin);
+    document.getElementById('cpcsv').addEventListener('click', function () {
+      var b = this;
+      copyText(toCSV(rows), function () { b.textContent = '已复制 ✓'; });
+    });
+    document.getElementById('logout').addEventListener('click', function () {
+      setToken('');
+      renderTokenPrompt('');
+    });
+    document.getElementById('back5').addEventListener('click', backToForm);
+  }
+
+  /* ==================== 启动 ==================== */
+  var tap = 0, last = 0;
+  var footer = document.getElementById('footer');
+  if (footer) {
+    footer.addEventListener('click', function () {
+      var t = Date.now();
+      if (t - last > 800) tap = 0;
+      last = t;
+      tap++;
+      if (tap >= 5) { tap = 0; location.hash = '#admin'; renderAdmin(); }
+    });
+  }
+
+  if (location.hash === '#admin') {
+    renderAdmin();
+  } else {
+    renderForm();
+  }
+})();
+</script>
+</body>
+</html>
